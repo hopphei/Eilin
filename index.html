@@ -389,6 +389,7 @@
             return;
         }
 
+        // Søk etter brukeren i Firebase
         onChildAdded(attendeesRef, (snapshot) => {
             if (snapshot.val().navn === name) {
                 remove(ref(database, `attendees/${snapshot.key}`))
@@ -404,7 +405,7 @@
         document.getElementById('name').value = ""; // ✅ Tøm feltet
     }
 
-    // 🔥 Oppdater listen live
+    // 🔥 Oppdater listen live når noen melder seg på eller av
     function addToList(snapshot) {
         let list = document.getElementById('attendees');
         let li = document.createElement('li');
@@ -418,10 +419,11 @@
         if (li) li.remove();
     }
 
-    // 🔥 Lytt til Firebase for endringer
+    // 🔥 Lytt til Firebase for oppdateringer (dette fikser at alle ser endringer live!)
     onChildAdded(attendeesRef, addToList);
     onChildRemoved(attendeesRef, removeFromList);
 </script>
+
 
 </body>
 </html>
