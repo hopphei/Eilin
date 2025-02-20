@@ -495,22 +495,24 @@
     }
 }
 
-     function spinWheel() {
+   function spinWheel() {
     if (attendees.length === 0) {
         alert("Ingen deltakere på lykkehjulet!");
         return;
     }
 
-    let angle = 0;
+    let angle = 0; // Nåværende rotasjonsvinkel
     let spinSpeed = Math.random() * 10 + 20; // Startfart
     let rotationAngle = 0;
 
     function animateSpin() {
-        spinSpeed *= 0.98; // Brems farten
+        spinSpeed *= 0.97; // Brems farten gradvis
         angle += spinSpeed;
         rotationAngle = angle % (Math.PI * 2); // Begrens vinkel
 
-        if (spinSpeed < 0.5) {
+        drawWheel(rotationAngle); // 🔥 Tegn hjulet med roterende vinkel
+
+        if (spinSpeed < 0.3) { // Stopp når det er sakte nok
             clearInterval(spinInterval);
 
             let segmentAngle = (2 * Math.PI) / attendees.length;
@@ -518,16 +520,15 @@
             let winner = attendees[selectedIndex];
 
             setTimeout(() => {
-                alert(winner + " skal ices!");
+                alert(winner + " skal ices! 🧊");
             }, 500);
             return;
         }
-
-        drawWheel(rotationAngle);
     }
 
     let spinInterval = setInterval(animateSpin, 50);
 }
+
 
 </script>
 
