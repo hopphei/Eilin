@@ -341,87 +341,87 @@
         }
 
     </script>
-    <!-- 🔥 Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.3.1/firebase-database.js"></script>
+   <script type="module">
+    // 🔥 Importer Firebase-funksjoner
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
+    import { getDatabase, ref, push, onChildAdded, onChildRemoved, remove } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-database.js";
 
-    <script>
-        // 🔥 Firebase-konfigurasjon
-        const firebaseConfig = {
-            apiKey: "AIzaSyBUCYeED-SyhEirXS3vztm4M2y3ayoJx-E",
-            authDomain: "eilin-feiring.firebaseapp.com",
-            databaseURL: "https://eilin-feiring-default-rtdb.firebaseio.com",
-            projectId: "eilin-feiring",
-            storageBucket: "eilin-feiring.appspot.com",
-            messagingSenderId: "193956821224",
-            appId: "1:193956821224:web:aa146fd6303dc82d46b15d",
-            measurementId: "G-WEE1GXTJVN"
-        };
+    // 🔥 Firebase-konfigurasjon
+    const firebaseConfig = {
+        apiKey: "AIzaSyBUCYeED-SyhEirXS3vztm4M2y3ayoJx-E",
+        authDomain: "eilin-feiring.firebaseapp.com",
+        databaseURL: "https://eilin-feiring-default-rtdb.firebaseio.com",
+        projectId: "eilin-feiring",
+        storageBucket: "eilin-feiring.appspot.com",
+        messagingSenderId: "193956821224",
+        appId: "1:193956821224:web:aa146fd6303dc82d46b15d",
+        measurementId: "G-WEE1GXTJVN"
+    };
 
-        // 🔥 Initialiser Firebase
-        firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
-        let attendeesRef = database.ref("attendees");
+    // 🔥 Initialiser Firebase
+    const app = initializeApp(firebaseConfig);
+    const database = getDatabase(app);
+    const attendeesRef = ref(database, "attendees");
 
-        // 🔥 Funksjon for å melde seg på
-        function signUp() {
-            let name = document.getElementById('name').value.trim();
-            if (name) {
-                attendeesRef.push({ navn: name, timestamp: Date.now() })
-                .then(() => {
-                    document.getElementById('name').value = ""; // ✅ Tøm inputfeltet
-                });
-            } else {
-                alert("Vennligst skriv inn et navn!");
-            }
-        }
-
-        // 🔥 Funksjon for å melde seg av
-        function signOff() {
-            let name = document.getElementById('name').value.trim();
-            if (!name) {
-                alert("Vennligst skriv inn navnet ditt for å melde deg av.");
-                return;
-            }
-
-            attendeesRef.once('value', snapshot => {
-                let found = false;
-                snapshot.forEach(childSnapshot => {
-                    if (childSnapshot.val().navn === name) {
-                        attendeesRef.child(childSnapshot.key).remove();
-                        found = true;
-                    }
-                });
-
-                if (found) {
-                    alert(name + " er nå meldt av.");
-                } else {
-                    alert(name + " ble ikke funnet.");
-                }
-
-                document.getElementById('name').value = ""; // ✅ Tøm feltet
+    // 🔥 Funksjon for å melde seg på
+    function signUp() {
+        let name = document.getElementById('name').value.trim();
+        if (name) {
+            console.log("Prøver å lagre:", name);
+            push(attendeesRef, { navn: name, timestamp: Date.now() })
+            .then(() => {
+                console.log("Data lagret i Firebase!");
+                document.getElementById('name').value = ""; // ✅ Tøm inputfeltet
+            })
+            .catch(error => {
+                console.error("Feil ved lagring:", error);
             });
+        } else {
+            alert("Vennligst skriv inn et navn!");
+        }
+    }
+
+    // 🔥 Funksjon for å melde seg av
+    function signOff() {
+        let name = document.getElementById('name').value.trim();
+        if (!name) {
+            alert("Vennligst skriv inn navnet ditt for å melde deg av.");
+            return;
         }
 
-        // 🔥 Legg til nye deltakere i listen
-        function addToList(snapshot) {
-            let list = document.getElementById('attendees');
-            let li = document.createElement('li');
-            li.textContent = snapshot.val().navn;
-            li.id = snapshot.key; // ✅ Gir unik ID for fjerning
-            list.appendChild(li);
-        }
+        onChildAdded(attendeesRef, (snapshot) => {
+            if (snapshot.val().navn === name) {
+                remove(ref(database, `attendees/${snapshot.key}`))
+                .then(() => {
+                    alert(name + " er nå meldt av.");
+                })
+                .catch(error => {
+                    console.error("Feil ved sletting:", error);
+                });
+            }
+        });
 
-        // 🔥 Fjern deltakere fra listen
-        function removeFromList(snapshot) {
-            let li = document.getElementById(snapshot.key);
-            if (li) li.remove();
-        }
+        document.getElementById('name').value = ""; // ✅ Tøm feltet
+    }
 
-        // 🔥 Lytt til Firebase for oppdateringer
-        attendeesRef.on('child_added', addToList);
-        attendeesRef.on('child_removed', removeFromList);
-    </script>
+    // 🔥 Oppdater listen live
+    function addToList(snapshot) {
+        let list = document.getElementById('attendees');
+        let li = document.createElement('li');
+        li.textContent = snapshot.val().navn;
+        li.id = snapshot.key;
+        list.appendChild(li);
+    }
+
+    function removeFromList(snapshot) {
+        let li = document.getElementById(snapshot.key);
+        if (li) li.remove();
+    }
+
+    // 🔥 Lytt til Firebase for endringer
+    onChildAdded(attendeesRef, addToList);
+    onChildRemoved(attendeesRef, removeFromList);
+</script>
 
 </body>
 </html>
