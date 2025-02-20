@@ -342,11 +342,9 @@
 
     </script>
  <script type="module">
-    // 🔥 Importer Firebase-funksjoner
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
     import { getDatabase, ref, push, remove, onChildAdded, onChildRemoved, onValue } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-database.js";
 
-    // 🔥 Firebase-konfigurasjon
     const firebaseConfig = {
         apiKey: "AIzaSyBUCYeED-SyhEirXS3vztm4M2y3ayoJx-E",
         authDomain: "eilin-feiring.firebaseapp.com",
@@ -358,50 +356,56 @@
         measurementId: "G-WEE1GXTJVN"
     };
 
-    // 🔥 Initialiser Firebase
     const app = initializeApp(firebaseConfig);
     const database = getDatabase(app);
     const attendeesRef = ref(database, "attendees");
 
     // 🔥 Funksjon for å melde seg på
-    function signUp() {
+    async function signUp() {
         let name = document.getElementById('name').value.trim();
         if (name) {
             console.log("Prøver å lagre:", name);
-            push(attendeesRef, { navn: name, timestamp: Date.now() })
-            .then(() => {
-                console.log("Data lagret i Firebase!");
+            try {
+                await push(attendeesRef, { navn: name, timestamp: Date.now() });
+                console.log("✅ Data lagret i Firebase!");
                 document.getElementById('name').value = ""; // ✅ Tøm inputfeltet
-            })
-            .catch(error => {
-                console.error("Feil ved lagring:", error);
-            });
+            } catch (error) {
+                console.error("❌ Feil ved lagring:", error);
+            }
         } else {
             alert("Vennligst skriv inn et navn!");
         }
     }
 
     // 🔥 Funksjon for å melde seg av
-    function signOff() {
+    async function signOff() {
         let name = document.getElementById('name').value.trim();
         if (!name) {
             alert("Vennligst skriv inn navnet ditt for å melde deg av.");
             return;
         }
 
-        onChildAdded(attendeesRef, (snapshot) => {
-            if (snapshot.val().navn === name) {
-                remove(ref(database, `attendees/${snapshot.key}`))
-                .then(() => {
-                    alert(name + " er nå meldt av.");
-                })
-                .catch(error => {
-                    console.error("Feil ved sletting:", error);
-                });
-            }
-        });
+        // Hent alle påmeldinger og finn riktig bruker
+        onValue(attendeesRef, (snapshot) => {
+            let found = false;
+            snapshot.forEach(childSnapshot => {
+                if (childSnapshot.val().navn === name) {
+                    remove(ref(database, `attendees/${childSnapshot.key}`))
+                    .then(() => {
+                        console.log(`✅ ${name} er nå meldt av.`);
+                        found = true;
+                    })
+                    .catch(error => {
+                        console.error("❌ Feil ved sletting:", error);
+                    });
+                }
+            });
 
-        document.getElementById('name').value = ""; // ✅ Tøm feltet
+            if (!found) {
+                alert(name + " ble ikke funnet.");
+            }
+            document.getElementById('name').value = ""; // ✅ Tøm feltet
+        }, { onlyOnce: true });
     }
 
     // 🔥 Oppdater listen live når noen melder seg på eller av
@@ -422,6 +426,12 @@
     onValue(attendeesRef, (snapshot) => {
         let list = document.getElementById('attendees');
         list.innerHTML = ""; // ✅ Fjerner gammel liste før ny lastes
+
+        if (!snapshot.exists()) {
+            console.log("📌 Ingen påmeldinger funnet.");
+            return;
+        }
+
         snapshot.forEach(childSnapshot => {
             addToList(childSnapshot); // ✅ Legger til alle eksisterende påmeldte
         });
@@ -431,6 +441,7 @@
     onChildAdded(attendeesRef, addToList);
     onChildRemoved(attendeesRef, removeFromList);
 </script>
+
 
 
 </body>
