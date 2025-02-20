@@ -387,6 +387,43 @@
             return;
         }
 
+        function drawWheel(rotationAngle = 0) {
+    let canvas = document.getElementById("wheelCanvas");
+    let ctx = canvas.getContext("2d");
+    let totalSlices = attendees.length;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    if (totalSlices === 0) return;
+
+    ctx.save();
+    ctx.translate(150, 150); // Flytter hjulet til midten
+    ctx.rotate(rotationAngle); // Roterer hele hjulet
+
+    let sliceAngle = (2 * Math.PI) / totalSlices;
+
+    for (let i = 0; i < totalSlices; i++) {
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.arc(0, 0, 140, i * sliceAngle, (i + 1) * sliceAngle);
+        ctx.fillStyle = `hsl(${i * (360 / totalSlices)}, 100%, 70%)`;
+        ctx.fill();
+        ctx.stroke();
+
+        // Legg til navn i segmentene
+        ctx.save();
+        ctx.rotate(sliceAngle / 2);
+        ctx.textAlign = "right";
+        ctx.fillStyle = "black";
+        ctx.font = "14px Arial";
+        ctx.fillText(attendees[i], 120, 5);
+        ctx.restore();
+
+        ctx.rotate(sliceAngle);
+    }
+
+    ctx.restore();
+}
+
         // Hent alle påmeldinger og finn riktig bruker
         onValue(attendeesRef, (snapshot) => {
             let found = false;
@@ -463,41 +500,9 @@
     document.getElementById('signupButton').addEventListener('click', signUp);
     document.getElementById('signOffButton').addEventListener('click', signOff);
 
-  function drawWheel(rotationAngle = 0) {
-    let canvas = document.getElementById("wheelCanvas");
-    let ctx = canvas.getContext("2d");
-    let totalSlices = attendees.length;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    if (totalSlices === 0) return;
-
-    let startAngle = rotationAngle; // Start på rotasjonsvinkelen
-    let sliceAngle = (2 * Math.PI) / totalSlices;
-
-    for (let i = 0; i < totalSlices; i++) {
-        ctx.beginPath();
-        ctx.moveTo(150, 150);
-        ctx.arc(150, 150, 140, startAngle, startAngle + sliceAngle);
-        ctx.fillStyle = `hsl(${i * (360 / totalSlices)}, 100%, 70%)`;
-        ctx.fill();
-        ctx.stroke();
-
-        // Legg til navn i segmentene
-        ctx.save();
-        ctx.translate(150, 150);
-        ctx.rotate(startAngle + sliceAngle / 2);
-        ctx.textAlign = "right";
-        ctx.fillStyle = "black";
-        ctx.font = "16px Arial";
-        ctx.fillText(attendees[i], 120, 5);
-        ctx.restore();
-
-        startAngle += sliceAngle;
-    }
-}
-
-
-  let rotationAngle = 0; // Holder styr på vinkelen
+let rotationAngle = 0; // Holder styr på vinkelen
+let spinSpeed = 0; // Hastighet på spinning
 
 function spinWheel() {
     if (attendees.length === 0) {
@@ -505,18 +510,18 @@ function spinWheel() {
         return;
     }
 
-    let spinSpeed = Math.random() * 10 + 20; // Startfart
-    let friction = 0.97; // Hvor raskt det bremser
-    let spinInterval = setInterval(() => {
-        spinSpeed *= friction; // Brems farten gradvis
-        rotationAngle += spinSpeed * (Math.PI / 180); // Konverter til radianer
+    spinSpeed = Math.random() * 10 + 20; // Startfart
+    let friction = 0.98; // Hvor raskt hjulet bremser
 
-        drawWheel(rotationAngle); // 🔥 Oppdater hjulet visuelt
+    function animate() {
+        if (spinSpeed > 0.2) { // Fortsett å spinne til hastigheten er lav nok
+            spinSpeed *= friction; // Reduser hastigheten gradvis
+            rotationAngle += spinSpeed * (Math.PI / 180); // Oppdater vinkelen
+            drawWheel(rotationAngle); // Oppdater hjulet
 
-        if (spinSpeed < 0.3) { // Når hjulet er sakte nok, stopp
-            clearInterval(spinInterval);
-
-            // Finn vinneren basert på hvor hjulet stopper
+            requestAnimationFrame(animate); // Kjør neste animasjon frame
+        } else {
+            // 🔥 Når hjulet stopper, finn vinneren
             let segmentAngle = (2 * Math.PI) / attendees.length;
             let selectedIndex = Math.floor((rotationAngle % (2 * Math.PI)) / segmentAngle);
             let winner = attendees[selectedIndex];
@@ -525,7 +530,9 @@ function spinWheel() {
                 alert(winner + " skal ices! 🧊");
             }, 500);
         }
-    }, 50);
+    }
+
+    animate(); // Start animasjonen
 }
 
 
