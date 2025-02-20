@@ -89,6 +89,51 @@
             transform: translateX(-50%);
             z-index: 10;
         }
+/* 📱 Gjør nettsiden mobilvennlig */
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+    
+    .content-container {
+        flex-direction: column; /* Endrer layout fra rad til kolonne */
+        align-items: center;
+    }
+
+    .schedule-container {
+        flex-direction: column; /* Stabler skjemaene vertikalt */
+        width: 100%;
+    }
+
+    .schedule {
+        width: 90%; /* Gjør boksene bredere på mobil */
+        margin-bottom: 10px;
+    }
+
+    .attendance-container {
+        flex-direction: column; /* Gjør "Meld deg på"-seksjonen mer mobilvennlig */
+        gap: 20px;
+    }
+
+    .wheel-container {
+        width: 100%; /* Sørger for at lykkehjulet ikke blir for stort */
+    }
+
+    canvas {
+        width: 100%; /* Gjør lykkehjulet mindre på mobil */
+        height: auto;
+    }
+
+    .arrow {
+        top: 5px; /* Justerer pilen for mobilvisning */
+    }
+
+    input, button {
+        width: 90%; /* Gjør inputfeltene og knappene lettere å bruke */
+        font-size: 16px; /* Øker tekststørrelsen for bedre lesbarhet */
+    }
+}
+        
     </style>
 </head>
 <body>
