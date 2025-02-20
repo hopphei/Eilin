@@ -324,8 +324,22 @@
         function selectWinner() {
             let segmentAngle = (2 * Math.PI) / attendees.length;
             let selectedIndex = Math.floor(((angle % (2 * Math.PI)) / segmentAngle) + attendees.length) % attendees.length;
-            alert(attendees[selectedIndex] + " skal ices!");
+            let winner = attendees[selectedIndex];
+        
+            // 🔥 Legger til vinnernavn i HTML på mobil og PC
+            let winnerDisplay = document.getElementById("winner-display");
+        
+            if (!winnerDisplay) { // Oppretter elementet hvis det ikke finnes
+                winnerDisplay = document.createElement("div");
+                winnerDisplay.id = "winner-display";
+                winnerDisplay.className = "winner-name";
+                document.querySelector(".wheel-container").appendChild(winnerDisplay);
+            }
+        
+            // 💡 Sørger for at teksten oppdateres riktig hver gang
+            winnerDisplay.textContent = winner + " skal ices!";
         }
+
     </script>
 </body>
 </html>
