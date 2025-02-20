@@ -361,10 +361,101 @@ const app = initializeApp(firebaseConfig);
 const database = getDatabase(app);
 const attendeesRef = ref(database, "attendees");
 
-let attendees = []; // Global liste for lykkehjulet
-let rotationAngle = 0; // Holder styr på vinkelen
-let spinSpeed = 0; // Hastighet på spinning
+// ✅ Liste over deltakere i lykkehjulet
+let attendees = [];
+let rotationAngle = 0;
+let spinSpeed = 0; 
 
+// 🔥 Funksjon for å melde seg på
+async function signUp() {
+    let name = document.getElementById('name').value.trim();
+    if (name && !attendees.includes(name)) {
+        try {
+            await push(attendeesRef, { navn: name, timestamp: Date.now() });
+            document.getElementById('name').value = ""; // ✅ Tøm inputfeltet
+        } catch (error) {
+            console.error("❌ Feil ved lagring:", error);
+        }
+    } else {
+        alert("Vennligst skriv inn et navn!");
+    }
+}
+
+// 🔥 Funksjon for å melde seg av
+async function signOff() {
+    let name = document.getElementById('name').value.trim();
+    if (!name) {
+        alert("Vennligst skriv inn navnet ditt for å melde deg av.");
+        return;
+    }
+
+    onValue(attendeesRef, (snapshot) => {
+        snapshot.forEach(childSnapshot => {
+            if (childSnapshot.val().navn === name) {
+                remove(ref(database, `attendees/${childSnapshot.key}`));
+            }
+        });
+    }, { onlyOnce: true });
+
+    document.getElementById('name').value = "";
+}
+
+// 🔥 Oppdater listen live når noen melder seg på eller av
+function addToList(snapshot) {
+    let list = document.getElementById('attendees');
+    let li = document.createElement('li');
+    li.textContent = snapshot.val().navn;
+    li.id = snapshot.key;
+    list.appendChild(li);
+
+    // 🔥 Legg til navn i lykkehjulet hvis det ikke er en duplikat
+    if (!attendees.includes(snapshot.val().navn)) {
+        attendees.push(snapshot.val().navn);
+    }
+    drawWheel();
+}
+
+function removeFromList(snapshot) {
+    let li = document.getElementById(snapshot.key);
+    if (li) li.remove();
+
+    // 🔥 Fjern navn fra lykkehjulet
+    attendees = attendees.filter(person => person !== snapshot.val().navn);
+    drawWheel();
+}
+
+// 🔥 Hent eksisterende deltakere når siden åpnes
+onValue(attendeesRef, (snapshot) => {
+    let list = document.getElementById('attendees');
+    list.innerHTML = ""; // ✅ Nullstiller liste
+    attendees = []; // ✅ Nullstiller hjulet
+
+    if (snapshot.exists()) {
+        snapshot.forEach(childSnapshot => {
+            let name = childSnapshot.val().navn;
+            if (!attendees.includes(name)) {
+                attendees.push(name);
+            }
+
+            let li = document.createElement('li');
+            li.textContent = name;
+            li.id = childSnapshot.key;
+            list.appendChild(li);
+        });
+    }
+
+    drawWheel();
+});
+
+// 🔥 Lytt til Firebase for oppdateringer i sanntid
+onChildAdded(attendeesRef, addToList);
+onChildRemoved(attendeesRef, removeFromList);
+
+// ✅ Koble knappene riktig
+document.getElementById('signupButton').addEventListener('click', signUp);
+document.getElementById('signOffButton').addEventListener('click', signOff);
+
+// 🎡 Funksjon for å tegne hjulet
 function drawWheel(rotation = 0) {
     let canvas = document.getElementById("wheelCanvas");
     let ctx = canvas.getContext("2d");
@@ -377,8 +468,8 @@ function drawWheel(rotation = 0) {
     let sliceAngle = (2 * Math.PI) / totalSlices;
 
     ctx.save();
-    ctx.translate(150, 150); // Flytter tegningen til midten av canvas
-    ctx.rotate(rotation); // Roterer hele hjulet
+    ctx.translate(150, 150); // Flytt sentrum til midten av canvas
+    ctx.rotate(rotation); // Roter hele hjulet
 
     for (let i = 0; i < totalSlices; i++) {
         ctx.beginPath();
@@ -388,7 +479,7 @@ function drawWheel(rotation = 0) {
         ctx.fill();
         ctx.stroke();
 
-        // Legg til navn i segmentene
+        // Tegn navn i segmentene
         ctx.save();
         ctx.rotate(sliceAngle / 2);
         ctx.textAlign = "right";
@@ -403,6 +494,7 @@ function drawWheel(rotation = 0) {
     ctx.restore();
 }
 
+// 🎡 Funksjon for å spinne hjulet
 function spinWheel() {
     if (attendees.length === 0) {
         alert("Ingen deltakere på lykkehjulet!");
@@ -433,107 +525,6 @@ function spinWheel() {
 
     animate(); // Start animasjonen
 }
-
-// 🔥 2️⃣ Firebase: Oppdater hjulet når noen melder seg på/av
-onValue(attendeesRef, (snapshot) => {
-    let list = document.getElementById('attendees');
-    list.innerHTML = "";
-    attendees = [];
-
-    if (!snapshot.exists()) {
-        console.log("📌 Ingen påmeldinger funnet.");
-        drawWheel();
-        return;
-    }
-
-    snapshot.forEach(childSnapshot => {
-        let name = childSnapshot.val().navn;
-        if (!attendees.includes(name)) {
-            attendees.push(name);
-        }
-
-        let li = document.createElement('li');
-        li.textContent = name;
-        list.appendChild(li);
-    });
-
-    drawWheel(); // Tegner hjulet på nytt basert på Firebase-deltakere
-});
-
-// 🔥 3️⃣ Funksjon for å spinne hjulet (denne fikser animasjonen)
-function spinWheel() {
-    if (spinning || attendees.length === 0) {
-        alert("Ingen deltakere på lykkehjulet!");
-        return;
-    }
-    
-    spinning = true;
-    spinSpeed = Math.random() * 10 + 30; // Startfart
-    let friction = 0.98; // Hvor raskt det bremser
-
-    function animate() {
-        if (spinSpeed > 0.2) { // Fortsett å spinne til hastigheten er lav nok
-            spinSpeed *= friction; // Reduser hastigheten gradvis
-            rotationAngle += spinSpeed * (Math.PI / 180); // Oppdater vinkelen
-            drawWheel(rotationAngle); // Oppdater hjulet
-
-            requestAnimationFrame(animate); // Kjør neste animasjon frame
-        } else {
-            spinning = false;
-            // 🔥 Når hjulet stopper, finn vinneren
-            let segmentAngle = (2 * Math.PI) / attendees.length;
-            let selectedIndex = Math.floor((rotationAngle % (2 * Math.PI)) / segmentAngle);
-            let winner = attendees[selectedIndex];
-
-            setTimeout(() => {
-                alert(winner + " skal ices! 🧊");
-            }, 500);
-        }
-    }
-
-    animate(); // Start animasjonen
-}
-
-// 🔥 4️⃣ Funksjon for å melde seg på
-async function signUp() {
-    let name = document.getElementById('name').value.trim();
-    if (name) {
-        console.log("Prøver å lagre:", name);
-        try {
-            await push(attendeesRef, { navn: name, timestamp: Date.now() });
-            console.log("✅ Data lagret i Firebase!");
-            document.getElementById('name').value = "";
-        } catch (error) {
-            console.error("❌ Feil ved lagring:", error);
-        }
-    } else {
-        alert("Vennligst skriv inn et navn!");
-    }
-}
-
-// 🔥 5️⃣ Funksjon for å melde seg av
-async function signOff() {
-    let name = document.getElementById('name').value.trim();
-    if (!name) {
-        alert("Vennligst skriv inn navnet ditt for å melde deg av.");
-        return;
-    }
-
-    onValue(attendeesRef, (snapshot) => {
-        snapshot.forEach(childSnapshot => {
-            if (childSnapshot.val().navn === name) {
-                remove(ref(database, `attendees/${childSnapshot.key}`));
-                console.log(`✅ ${name} er nå meldt av.`);
-            }
-        });
-
-        document.getElementById('name').value = "";
-    }, { onlyOnce: true });
-}
-
-// 🔥 6️⃣ Koble knapper til funksjonene
-document.getElementById('signupButton').addEventListener('click', signUp);
-document.getElementById('signOffButton').addEventListener('click', signOff);
 
 
 </script>
