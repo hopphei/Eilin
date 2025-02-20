@@ -359,6 +359,8 @@
     const app = initializeApp(firebaseConfig);
     const database = getDatabase(app);
     const attendeesRef = ref(database, "attendees");
+    let attendees = []; // Global liste for lykkehjulet
+
 
     // 🔥 Funksjon for å melde seg på
     async function signUp() {
@@ -415,11 +417,17 @@
         li.textContent = snapshot.val().navn;
         li.id = snapshot.key;
         list.appendChild(li);
+          // 🔥 Legg til navn i lykkehjulet
+        attendees.push(snapshot.val().navn);
+        drawWheel();
     }
 
     function removeFromList(snapshot) {
         let li = document.getElementById(snapshot.key);
         if (li) li.remove();
+          // 🔥 Fjern navn fra lykkehjulet
+        attendees = attendees.filter(person => person !== snapshot.val().navn);
+        drawWheel();
     }
 
     // 🔥 Last inn eksisterende data når siden åpnes
@@ -435,6 +443,7 @@
         snapshot.forEach(childSnapshot => {
             addToList(childSnapshot); // ✅ Legger til alle eksisterende påmeldte
         });
+        drawWheel();
     });
 
     // 🔥 Lytt til Firebase for oppdateringer i sanntid
@@ -442,6 +451,48 @@
     onChildRemoved(attendeesRef, removeFromList);
     document.getElementById('signupButton').addEventListener('click', signUp);
     document.getElementById('signOffButton').addEventListener('click', signOff);
+
+    function drawWheel() {
+    let canvas = document.getElementById("wheelCanvas");
+    let ctx = canvas.getContext("2d");
+    let totalSlices = attendees.length;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    if (totalSlices === 0) return;
+
+    let startAngle = 0;
+    let sliceAngle = (Math.PI * 2) / totalSlices;
+
+    for (let i = 0; i < totalSlices; i++) {
+        ctx.beginPath();
+        ctx.moveTo(150, 150);
+        ctx.arc(150, 150, 140, startAngle, startAngle + sliceAngle);
+        ctx.fillStyle = `hsl(${i * (360 / totalSlices)}, 100%, 70%)`;
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.save();
+        ctx.translate(150, 150);
+        ctx.rotate(startAngle + sliceAngle / 2);
+        ctx.textAlign = "right";
+        ctx.fillStyle = "black";
+        ctx.font = "16px Arial";
+        ctx.fillText(attendees[i], 120, 5);
+        ctx.restore();
+
+        startAngle += sliceAngle;
+    }
+}
+
+     function spinWheel() {
+    if (attendees.length === 0) {
+        alert("Ingen deltakere på lykkehjulet!");
+        return;
+    }
+    let selectedIndex = Math.floor(Math.random() * attendees.length);
+    alert(`${attendees[selectedIndex]} skal ices!`);
+}
+
 
 
 </script>
