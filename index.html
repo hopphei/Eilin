@@ -341,10 +341,10 @@
         }
 
     </script>
-   <script type="module">
+ <script type="module">
     // 🔥 Importer Firebase-funksjoner
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
-    import { getDatabase, ref, push, onChildAdded, onChildRemoved, remove } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-database.js";
+    import { getDatabase, ref, push, remove, onChildAdded, onChildRemoved, onValue } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-database.js";
 
     // 🔥 Firebase-konfigurasjon
     const firebaseConfig = {
@@ -389,7 +389,6 @@
             return;
         }
 
-        // Søk etter brukeren i Firebase
         onChildAdded(attendeesRef, (snapshot) => {
             if (snapshot.val().navn === name) {
                 remove(ref(database, `attendees/${snapshot.key}`))
@@ -419,7 +418,16 @@
         if (li) li.remove();
     }
 
-    // 🔥 Lytt til Firebase for oppdateringer (dette fikser at alle ser endringer live!)
+    // 🔥 Last inn eksisterende data når siden åpnes
+    onValue(attendeesRef, (snapshot) => {
+        let list = document.getElementById('attendees');
+        list.innerHTML = ""; // ✅ Fjerner gammel liste før ny lastes
+        snapshot.forEach(childSnapshot => {
+            addToList(childSnapshot); // ✅ Legger til alle eksisterende påmeldte
+        });
+    });
+
+    // 🔥 Lytt til Firebase for oppdateringer i sanntid
     onChildAdded(attendeesRef, addToList);
     onChildRemoved(attendeesRef, removeFromList);
 </script>
