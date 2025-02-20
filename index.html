@@ -341,5 +341,64 @@
         }
 
     </script>
+
+    <!-- 🔥 Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/11.3.1/firebase-database.js"></script>
+
+<script>
+  // 🔥 Firebase-konfigurasjon
+  const firebaseConfig = {
+    apiKey: "AIzaSyBUCYeED-SyhEirXS3vztm4M2y3ayoJx-E",
+    authDomain: "eilin-feiring.firebaseapp.com",
+    databaseURL: "https://eilin-feiring-default-rtdb.firebaseio.com",
+    projectId: "eilin-feiring",
+    storageBucket: "eilin-feiring.appspot.com",
+    messagingSenderId: "193956821224",
+    appId: "1:193956821224:web:aa146fd6303dc82d46b15d",
+    measurementId: "G-WEE1GXTJVN"
+  };
+
+  // 🔥 Initialiser Firebase
+  firebase.initializeApp(firebaseConfig);
+  const database = firebase.database();
+
+  // 🔥 Referanse til "attendees" i databasen
+  let attendeesRef = database.ref("attendees");
+
+  function signUp() {
+      let name = document.getElementById('name').value;
+      if (name) {
+          attendeesRef.push(name); // 🔥 Legger til navn i databasen
+          document.getElementById('name').value = ""; // Tøm inputfeltet
+      }
+  }
+
+  function signOff() {
+      let name = document.getElementById('name').value;
+      attendeesRef.once('value', snapshot => {
+          snapshot.forEach(childSnapshot => {
+              if (childSnapshot.val() === name) {
+                  attendeesRef.child(childSnapshot.key).remove(); // 🔥 Fjerner fra databasen
+              }
+          });
+      });
+      document.getElementById('name').value = ""; // Tøm feltet
+  }
+
+  function updateList(snapshot) {
+      let list = document.getElementById('attendees');
+      list.innerHTML = '';
+      snapshot.forEach(childSnapshot => {
+          let li = document.createElement('li');
+          li.textContent = childSnapshot.val();
+          list.appendChild(li);
+      });
+  }
+
+  // 🔥 Oppdaterer listen live når noen melder seg på
+  attendeesRef.on('value', updateList);
+</script>
+
 </body>
 </html>
