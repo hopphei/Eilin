@@ -342,192 +342,126 @@
 
     </script>
  <script type="module">
-  // 🔥 Firebase-setup
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
-import { getDatabase, ref, push, remove, onChildAdded, onChildRemoved, onValue } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-database.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
+    import { getDatabase, ref, push, remove, onChildAdded, onChildRemoved, onValue } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-database.js";
 
-const firebaseConfig = {
-    apiKey: "AIzaSyBUCYeED-SyhEirXS3vztm4M2y3ayoJx-E",
-    authDomain: "eilin-feiring.firebaseapp.com",
-    databaseURL: "https://eilin-feiring-default-rtdb.firebaseio.com",
-    projectId: "eilin-feiring",
-    storageBucket: "eilin-feiring.appspot.com",
-    messagingSenderId: "193956821224",
-    appId: "1:193956821224:web:aa146fd6303dc82d46b15d",
-    measurementId: "G-WEE1GXTJVN"
-};
+    // 🔥 Firebase-konfigurasjon
+    const firebaseConfig = {
+        apiKey: "AIzaSyBUCYeED-SyhEirXS3vztm4M2y3ayoJx-E",
+        authDomain: "eilin-feiring.firebaseapp.com",
+        databaseURL: "https://eilin-feiring-default-rtdb.firebaseio.com",
+        projectId: "eilin-feiring",
+        storageBucket: "eilin-feiring.appspot.com",
+        messagingSenderId: "193956821224",
+        appId: "1:193956821224:web:aa146fd6303dc82d46b15d",
+        measurementId: "G-WEE1GXTJVN"
+    };
 
-const app = initializeApp(firebaseConfig);
-const database = getDatabase(app);
-const attendeesRef = ref(database, "attendees");
+    // 🔥 Initialiser Firebase
+    const app = initializeApp(firebaseConfig);
+    const database = getDatabase(app);
+    const attendeesRef = ref(database, "attendees");
 
-// ✅ Liste over deltakere i lykkehjulet
-let attendees = [];
-let rotationAngle = 0;
-let spinSpeed = 0; 
+    let attendees = []; // Global liste for lykkehjulet
 
-// 🔥 Funksjon for å melde seg på
-async function signUp() {
-    let name = document.getElementById('name').value.trim();
-    if (name && !attendees.includes(name)) {
-        try {
-            await push(attendeesRef, { navn: name, timestamp: Date.now() });
-            document.getElementById('name').value = ""; // ✅ Tøm inputfeltet
-        } catch (error) {
-            console.error("❌ Feil ved lagring:", error);
-        }
-    } else {
-        alert("Vennligst skriv inn et navn!");
-    }
-}
-
-// 🔥 Funksjon for å melde seg av
-async function signOff() {
-    let name = document.getElementById('name').value.trim();
-    if (!name) {
-        alert("Vennligst skriv inn navnet ditt for å melde deg av.");
-        return;
-    }
-
-    onValue(attendeesRef, (snapshot) => {
-        snapshot.forEach(childSnapshot => {
-            if (childSnapshot.val().navn === name) {
-                remove(ref(database, `attendees/${childSnapshot.key}`));
+    // 🔥 Funksjon for å melde seg på
+    async function signUp() {
+        let name = document.getElementById('name').value.trim();
+        if (name) {
+            console.log("Prøver å lagre:", name);
+            try {
+                await push(attendeesRef, { navn: name, timestamp: Date.now() });
+                console.log("✅ Data lagret i Firebase!");
+                document.getElementById('name').value = ""; // ✅ Tøm inputfeltet
+            } catch (error) {
+                console.error("❌ Feil ved lagring:", error);
             }
-        });
-    }, { onlyOnce: true });
-
-    document.getElementById('name').value = "";
-}
-
-// 🔥 Oppdater listen live når noen melder seg på eller av
-function addToList(snapshot) {
-    let list = document.getElementById('attendees');
-    let li = document.createElement('li');
-    li.textContent = snapshot.val().navn;
-    li.id = snapshot.key;
-    list.appendChild(li);
-
-    // 🔥 Legg til navn i lykkehjulet hvis det ikke er en duplikat
-    if (!attendees.includes(snapshot.val().navn)) {
-        attendees.push(snapshot.val().navn);
-    }
-    drawWheel();
-}
-
-function removeFromList(snapshot) {
-    let li = document.getElementById(snapshot.key);
-    if (li) li.remove();
-
-    // 🔥 Fjern navn fra lykkehjulet
-    attendees = attendees.filter(person => person !== snapshot.val().navn);
-    drawWheel();
-}
-
-// 🔥 Hent eksisterende deltakere når siden åpnes
-onValue(attendeesRef, (snapshot) => {
-    let list = document.getElementById('attendees');
-    list.innerHTML = ""; // ✅ Nullstiller liste
-    attendees = []; // ✅ Nullstiller hjulet
-
-    if (snapshot.exists()) {
-        snapshot.forEach(childSnapshot => {
-            let name = childSnapshot.val().navn;
-            if (!attendees.includes(name)) {
-                attendees.push(name);
-            }
-
-            let li = document.createElement('li');
-            li.textContent = name;
-            li.id = childSnapshot.key;
-            list.appendChild(li);
-        });
-    }
-
-    drawWheel();
-});
-
-// 🔥 Lytt til Firebase for oppdateringer i sanntid
-onChildAdded(attendeesRef, addToList);
-onChildRemoved(attendeesRef, removeFromList);
-
-// ✅ Koble knappene riktig
-document.getElementById('signupButton').addEventListener('click', signUp);
-document.getElementById('signOffButton').addEventListener('click', signOff);
-
-// 🎡 Funksjon for å tegne hjulet
-function drawWheel(rotation = 0) {
-    let canvas = document.getElementById("wheelCanvas");
-    let ctx = canvas.getContext("2d");
-    let totalSlices = attendees.length;
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    if (totalSlices === 0) return;
-
-    let sliceAngle = (2 * Math.PI) / totalSlices;
-
-    ctx.save();
-    ctx.translate(150, 150); // Flytt sentrum til midten av canvas
-    ctx.rotate(rotation); // Roter hele hjulet
-
-    for (let i = 0; i < totalSlices; i++) {
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.arc(0, 0, 140, i * sliceAngle, (i + 1) * sliceAngle);
-        ctx.fillStyle = `hsl(${i * (360 / totalSlices)}, 100%, 70%)`;
-        ctx.fill();
-        ctx.stroke();
-
-        // Tegn navn i segmentene
-        ctx.save();
-        ctx.rotate(sliceAngle / 2);
-        ctx.textAlign = "right";
-        ctx.fillStyle = "black";
-        ctx.font = "14px Arial";
-        ctx.fillText(attendees[i], 120, 5);
-        ctx.restore();
-
-        ctx.rotate(sliceAngle);
-    }
-
-    ctx.restore();
-}
-
-// 🎡 Funksjon for å spinne hjulet
-function spinWheel() {
-    if (attendees.length === 0) {
-        alert("Ingen deltakere på lykkehjulet!");
-        return;
-    }
-
-    spinSpeed = Math.random() * 10 + 20; // Startfart
-    let friction = 0.98; // Hvor raskt hjulet bremser
-
-    function animate() {
-        if (spinSpeed > 0.2) { // Fortsett å spinne til hastigheten er lav nok
-            spinSpeed *= friction; // Reduser hastigheten gradvis
-            rotationAngle += spinSpeed * (Math.PI / 180); // Oppdater vinkelen
-            drawWheel(rotationAngle); // Oppdater hjulet
-
-            requestAnimationFrame(animate); // Kjør neste animasjon frame
         } else {
-            // 🔥 Når hjulet stopper, finn vinneren
-            let segmentAngle = (2 * Math.PI) / attendees.length;
-            let selectedIndex = Math.floor((rotationAngle % (2 * Math.PI)) / segmentAngle);
-            let winner = attendees[selectedIndex];
-
-            setTimeout(() => {
-                alert(winner + " skal ices! 🧊");
-            }, 500);
+            alert("Vennligst skriv inn et navn!");
         }
     }
 
-    animate(); // Start animasjonen
-}
+    // 🔥 Funksjon for å melde seg av
+    async function signOff() {
+        let name = document.getElementById('name').value.trim();
+        if (!name) {
+            alert("Vennligst skriv inn navnet ditt for å melde deg av.");
+            return;
+        }
 
+        onValue(attendeesRef, (snapshot) => {
+            let found = false;
+            snapshot.forEach(childSnapshot => {
+                if (childSnapshot.val().navn === name) {
+                    remove(ref(database, `attendees/${childSnapshot.key}`))
+                    .then(() => {
+                        console.log(`✅ ${name} er nå meldt av.`);
+                        found = true;
+                    })
+                    .catch(error => {
+                        console.error("❌ Feil ved sletting:", error);
+                    });
+                }
+            });
 
+            if (!found) {
+                alert(name + " ble ikke funnet.");
+            }
+            document.getElementById('name').value = ""; // ✅ Tøm feltet
+        }, { onlyOnce: true });
+    }
+
+    // 🔥 Oppdater listen live når noen melder seg på eller av
+    function addToList(snapshot) {
+        let list = document.getElementById('attendees');
+        let li = document.createElement('li');
+        li.textContent = snapshot.val().navn;
+        li.id = snapshot.key;
+        list.appendChild(li);
+
+        // 🔥 Legg til navn i lykkehjulet
+        if (!attendees.includes(snapshot.val().navn)) {
+            attendees.push(snapshot.val().navn);
+            drawWheel();
+        }
+    }
+
+    function removeFromList(snapshot) {
+        let li = document.getElementById(snapshot.key);
+        if (li) li.remove();
+
+        // 🔥 Fjern navn fra lykkehjulet
+        attendees = attendees.filter(person => person !== snapshot.val().navn);
+        drawWheel();
+    }
+
+    // 🔥 Last inn eksisterende data når siden åpnes
+    onValue(attendeesRef, (snapshot) => {
+        let list = document.getElementById('attendees');
+        list.innerHTML = ""; // ✅ Nullstill listen før vi legger inn data
+        attendees = []; // ✅ Nullstill lykkehjulet
+
+        if (!snapshot.exists()) {
+            console.log("📌 Ingen påmeldinger funnet.");
+            return;
+        }
+
+        snapshot.forEach(childSnapshot => {
+            addToList(childSnapshot);
+        });
+
+        drawWheel(); // 🔥 Tegn hjulet basert på Firebase-data
+    });
+
+    // 🔥 Lytt til Firebase for oppdateringer i sanntid
+    onChildAdded(attendeesRef, addToList);
+    onChildRemoved(attendeesRef, removeFromList);
+
+    // 🔥 Koble knappene til funksjonene
+    document.getElementById('signupButton').addEventListener('click', signUp);
+    document.getElementById('signOffButton').addEventListener('click', signOff);
 </script>
+
 
 </body>
 </html>
