@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feiring av Eilin Valencia</title>
+    <style>
+
+        
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to bottom, #3a506b, #5c677d);
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+        h1 {
+            color: silver;
+            font-size: 2.5em;
+        }
+        .content-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .main-image {
+            width: 90%;
+            max-width: 600px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(255, 255, 255, 0.5);
+            margin-bottom: 20px;
+        }
+        .schedule-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .schedule {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 20px;
+            border-radius: 10px;
+            width: 300px;
+        }
+        .schedule-frame {
+            padding: 20px;
+            border: 5px solid pink;
+            border-radius: 15px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .attendance-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 50px;
+            margin-top: 20px;
+        }
+        .update-wheel-container {
+            display: flex;
+            justify-content: center;
+            gap: 50px;
+            margin-top: 30px;
+        }
+        .update-container, .wheel-container {
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            width: 300px;
+            text-align: center;
+        }
+        .wheel-container canvas {
+            margin-top: 10px;
+            border-radius: 50%;
+            background: white;
+        }
+        .wheel-container {
+            position: relative; /* Sørger for at pilen plasseres i forhold til denne */
+        }
+
+        .arrow {
+            width: 0;
+            height: 0;
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-top: 30px solid red; /* Rød pil */
+            position: absolute;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+    <h1>Feiring av Eilin Valencia</h1>
+    <img class="main-image" src="IMG_6316.HEIC" alt="Bilde av feiringen">
+    <div class="content-container">
+    <h2>DAGSFYLLA!!!</h2>  
+        <div class="schedule-container schedule-frame">
+            <div class="schedule">
+                <h2>Lørdag</h2>
+                <p>16:00 - Velkomst til vors</p>
+                <p>17:30 - Noe søtt på tungen</p>
+                <p>19:00 - Ølbong championship (kanskje noen på 21 år blir icet)</p>
+                <p>20:00 - Nystemten</p>
+                <p>20:30 - Avreise fra vors</p>
+                <p>21:20 - Konsertstart</p>
+            </div>
+            
+            <div class="schedule">
+                <h2>Søndag</h2>
+                <p>10:00 ish - frokostVors, vi stiller med rundstykker og pålegg</p>
+                <p>13:00 - Avreise til solsiden</p>
+                <p>14:00 - Cava herifra til helvete</p>
+            </div>
+        </div>
+        
+        <div class="attendance-container">
+            <div class="image-container">
+                <img src="IMG_6184.HEIC" alt="Et annet bilde" style="width: 180px; border-radius: 10px;">
+            </div>
+            
+            <div class="attendance">
+                <h2>Meld deg på/av</h2>
+                <input type="text" id="name" placeholder="Ditt navn">
+                <button onclick="signUp()">Meld deg på</button>
+                <button onclick="signOff()">Meld deg av</button>
+                <h3>Disse kommer:</h3>
+                <ul id="attendees"></ul>
+            </div>
+            
+            <div class="image-container">
+                <img src="IMG_6307.HEIC" alt="Et annet bilde" style="width: 180px; border-radius: 10px;">
+            </div>
+        </div>
+
+        <div class="update-wheel-container">
+            <div class="update-container">
+                <h2>Er litt tekniske problemer med nettsiden per nå</h2>
+                <p>-knappen for å melde seg på er fortsatt under bygging, takk for tålmodigheten</p>
+            </div>
+            <div class="wheel-container">
+                <h2>Hvem skal ices?</h2>
+                <div class="arrow"></div>
+                <canvas id="wheelCanvas" width="300" height="300"></canvas>
+                <button onclick="spinWheel()">Spinn lykkehjulet</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let attendees = [];
+        let spinning = false;
+        let angle = 0;
+        let spinSpeed = 20;
+        
+        function signUp() {
+            let name = document.getElementById('name').value;
+            if (name && !attendees.includes(name)) {
+                attendees.push(name);
+                updateList();
+            }
+        }
+
+        function signOff() {
+            let name = document.getElementById('name').value;
+            attendees = attendees.filter(person => person !== name);
+            updateList();
+        }
+
+        function updateList() {
+            let list = document.getElementById('attendees');
+            list.innerHTML = '';
+            attendees.forEach(person => {
+                let li = document.createElement('li');
+                li.textContent = person;
+                list.appendChild(li);
+            });
+            drawWheel();
+        }
+
+        function drawWheel() {
+            let canvas = document.getElementById("wheelCanvas");
+            let ctx = canvas.getContext("2d");
+            let totalSlices = attendees.length;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            if (totalSlices === 0) return;
+
+            let startAngle = angle;
+            let sliceAngle = (Math.PI * 2) / totalSlices;
+
+            for (let i = 0; i < totalSlices; i++) {
+                // Tegner segmentene
+                ctx.beginPath();
+                ctx.moveTo(150, 150);
+                ctx.arc(150, 150, 140, startAngle, startAngle + sliceAngle);
+                ctx.fillStyle = `hsl(${i * (360 / totalSlices)}, 100%, 70%)`;
+                ctx.fill();
+                ctx.stroke();
+                
+                // Legger til navnene i hvert segment
+                ctx.save();
+                ctx.translate(150, 150);
+                ctx.rotate(startAngle + sliceAngle / 2);
+                ctx.textAlign = "right";
+                ctx.fillStyle = "black"; // Sørger for at teksten er synlig
+                ctx.font = "16px Arial";
+                ctx.fillText(attendees[i], 120, 5);
+                ctx.restore();
+                
+                startAngle += sliceAngle;
+            }
+        }
+
+
+        function spinWheel() {
+            if (spinning || attendees.length === 0) return;
+            spinning = true;
+            let interval = setInterval(() => {
+                angle += spinSpeed;
+                spinSpeed *= 0.98;
+                drawWheel();
+                if (spinSpeed < 0.5) {
+                    clearInterval(interval);
+                    spinning = false;
+                    spinSpeed = 20;
+                    alert(attendees[Math.floor(Math.random() * attendees.length)] + " skal ices!");
+                }
+            }, 50);
+        }
+        function selectWinner() {
+            let segmentAngle = (2 * Math.PI) / attendees.length;
+            let selectedIndex = Math.floor(((angle % (2 * Math.PI)) / segmentAngle) + attendees.length) % attendees.length;
+            alert(attendees[selectedIndex] + " skal ices!");
+        }
+    </script>
+</body>
+</html>
