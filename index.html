@@ -432,22 +432,29 @@
 
     // 🔥 Last inn eksisterende data når siden åpnes
     onValue(attendeesRef, (snapshot) => {
-        let list = document.getElementById('attendees');
-        list.innerHTML = ""; // ✅ Fjerner gammel liste før ny lastes
-        attendees = []; // ✅ Nullstill lykkehjulet før vi laster inn nye deltakere
-    
-        if (!snapshot.exists()) {
-            console.log("📌 Ingen påmeldinger funnet.");
-            return;
+    let list = document.getElementById('attendees');
+    list.innerHTML = ""; // ✅ Tømmer listen før vi legger til på nytt
+    attendees = []; // ✅ Nullstiller for å unngå duplikater
+
+    if (!snapshot.exists()) {
+        console.log("📌 Ingen påmeldinger funnet.");
+        drawWheel(); // 🔥 Tegn et tomt hjul hvis ingen er påmeldt
+        return;
+    }
+
+    snapshot.forEach(childSnapshot => {
+        let name = childSnapshot.val().navn;
+        if (!attendees.includes(name)) {  // ✅ Sjekker at vi ikke legger til dobbelt
+            attendees.push(name);
         }
-    
-        snapshot.forEach(childSnapshot => {
-            addToList(childSnapshot); // ✅ Legger til alle eksisterende påmeldte
-        });
-    
-        // 🔥 Tegn hjulet med de nye deltakerne
-        drawWheel();
+
+        let li = document.createElement('li');
+        li.textContent = name;
+        list.appendChild(li);
     });
+
+    drawWheel(); // 🔥 Tegner hjulet på nytt basert på Firebase-deltakere
+});
 
 
     // 🔥 Lytt til Firebase for oppdateringer i sanntid
@@ -456,73 +463,7 @@
     document.getElementById('signupButton').addEventListener('click', signUp);
     document.getElementById('signOffButton').addEventListener('click', signOff);
 
-    function drawWheel() {
-    let canvas = document.getElementById("wheelCanvas");
-    let ctx = canvas.getContext("2d");
-    let totalSlices = attendees.length;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    if (totalSlices === 0) return;
-
-    let startAngle = 0;
-    let sliceAngle = (Math.PI * 2) / totalSlices;
-
-    for (let i = 0; i < totalSlices; i++) {
-        ctx.beginPath();
-        ctx.moveTo(150, 150);
-        ctx.arc(150, 150, 140, startAngle, startAngle + sliceAngle);
-        ctx.fillStyle = `hsl(${i * (360 / totalSlices)}, 100%, 70%)`;
-        ctx.fill();
-        ctx.stroke();
-
-        ctx.save();
-        ctx.translate(150, 150);
-        ctx.rotate(startAngle + sliceAngle / 2);
-        ctx.textAlign = "right";
-        ctx.fillStyle = "black";
-        ctx.font = "16px Arial";
-        ctx.fillText(attendees[i], 120, 5);
-        ctx.restore();
-
-        startAngle += sliceAngle;
-    }
-}
-
-     function spinWheel() {
-    if (attendees.length === 0) {
-        alert("Ingen deltakere på lykkehjulet!");
-        return;
-    }
-
-    let canvas = document.getElementById("wheelCanvas");
-    let ctx = canvas.getContext("2d");
-
-    let angle = 0;
-    let spinSpeed = Math.random() * 10 + 20; // Startfart
-
-    function animateSpin() {
-        spinSpeed *= 0.98; // Brems farten
-        angle += spinSpeed;
-
-        if (spinSpeed < 0.5) {
-            clearInterval(spinInterval);
-            let segmentAngle = (2 * Math.PI) / attendees.length;
-            let selectedIndex = Math.floor(((angle % (2 * Math.PI)) / segmentAngle) + attendees.length) % attendees.length;
-            let winner = attendees[selectedIndex];
-
-            setTimeout(() => {
-                alert(winner + " skal ices!");
-            }, 500);
-            return;
-        }
-
-        drawWheelAtAngle(angle);
-    }
-
-    let spinInterval = setInterval(animateSpin, 50);
-}
-
-function drawWheelAtAngle(rotationAngle) {
+   function drawWheel(rotationAngle = 0) {
     let canvas = document.getElementById("wheelCanvas");
     let ctx = canvas.getContext("2d");
     let totalSlices = attendees.length;
@@ -546,16 +487,47 @@ function drawWheelAtAngle(rotationAngle) {
         ctx.rotate(startAngle + sliceAngle / 2);
         ctx.textAlign = "right";
         ctx.fillStyle = "black";
-        ctx.font = "16px Arial";
-        ctx.fillText(attendees[i], 120, 5);
+        ctx.font = "14px Arial";
+        ctx.fillText(attendees[i], 100, 5);
         ctx.restore();
 
         startAngle += sliceAngle;
     }
 }
 
+     function spinWheel() {
+    if (attendees.length === 0) {
+        alert("Ingen deltakere på lykkehjulet!");
+        return;
+    }
 
+    let angle = 0;
+    let spinSpeed = Math.random() * 10 + 20; // Startfart
+    let rotationAngle = 0;
 
+    function animateSpin() {
+        spinSpeed *= 0.98; // Brems farten
+        angle += spinSpeed;
+        rotationAngle = angle % (Math.PI * 2); // Begrens vinkel
+
+        if (spinSpeed < 0.5) {
+            clearInterval(spinInterval);
+
+            let segmentAngle = (2 * Math.PI) / attendees.length;
+            let selectedIndex = Math.floor(((rotationAngle) / segmentAngle) % attendees.length);
+            let winner = attendees[selectedIndex];
+
+            setTimeout(() => {
+                alert(winner + " skal ices!");
+            }, 500);
+            return;
+        }
+
+        drawWheel(rotationAngle);
+    }
+
+    let spinInterval = setInterval(animateSpin, 50);
+}
 
 </script>
 
