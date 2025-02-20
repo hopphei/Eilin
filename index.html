@@ -132,6 +132,35 @@
         width: 90%; /* Gjør inputfeltene og knappene lettere å bruke */
         font-size: 16px; /* Øker tekststørrelsen for bedre lesbarhet */
     }
+        .update-wheel-container {
+        flex-direction: column; /* Stabler elementene vertikalt */
+        align-items: center;
+        gap: 20px;
+    }
+
+    .update-container, .wheel-container {
+        width: 90%; /* Gjør boksene bredere */
+        max-width: 400px; /* Hindrer at de blir for brede */
+    }
+
+    .wheel-container canvas {
+        width: 90vw; /* Gjør lykkehjulet mer mobilvennlig */
+        height: auto;
+        max-width: 300px; /* Hindrer at det blir for stort */
+    }
+
+    .arrow {
+        top: -5px; /* Flytter pilen nærmere hjulet */
+        left: 50%;
+        transform: translateX(-50%);
+        border-bottom-width: 20px; /* Gjør pilen større */
+    }
+
+    .wheel-container button {
+        width: 80%; /* Gjør knappen mer mobilvennlig */
+        margin-top: 10px;
+    }
+
 }
         
     </style>
