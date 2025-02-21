@@ -228,8 +228,8 @@
 
         <div class="update-wheel-container">
             <div class="update-container">
-                <h2>NÅ KAN MAN MELDE SEG PÅ! DET FUNKER!!</h2>
-                <p>(vi har møtt på et aldri så lite problem med "ice-hjulet", det må jeg bare beklage.. jobber med saken!)</p>
+                <h2>NÅ KAN MAN MELDE SEG PÅ!</h2>
+                <p>Ice-hjulet er oppe igjen! er bare et par småting som skal fikses, stay tuned gays!</p>
             </div>
             <div class="wheel-container">
                 <h2>Hvem skal ices?</h2>
@@ -405,53 +405,61 @@
     function spinWheel() {
         if (spinning || attendees.length === 0) return;
         spinning = true;
-
-        let spinSpeed = Math.random() * 10 + 20;
-        let friction = 0.98;
-
+    
+        // 🔥 Gjør startfarten mer tilfeldig
+        let spinSpeed = Math.random() * 20 + 25; // Mellom 25 og 45
+        let friction = 0.97 + Math.random() * 0.02; // Friksjon mellom 0.97 og 0.99
+    
+        let extraRotations = Math.floor(Math.random() * 5 + 5); // Ekstra fullstendige rotasjoner (5-10 runder)
+        let targetRotation = rotationAngle + extraRotations * (2 * Math.PI);
+    
         function animateSpin() {
             spinSpeed *= friction;
             rotationAngle += spinSpeed * (Math.PI / 180);
             drawWheel();
-
+    
             if (spinSpeed < 0.5) {
                 clearInterval(spinInterval);
                 spinning = false;
-
-                let segmentAngle = (2 * Math.PI) / attendees.length;
-                let selectedIndex = Math.floor((rotationAngle % (2 * Math.PI)) / segmentAngle);
-                let winner = attendees[selectedIndex];
-
-                setTimeout(() => {
-                    alert(winner + " skal ices! 🧊");
-                }, 500);
+                
+                // 🔥 Sikre at vinkelen holder seg mellom 0 og 360 grader
+                rotationAngle = rotationAngle % (2 * Math.PI);
+    
+                // ✅ Velg vinner etter ny logikk
+                selectWinner();
             }
         }
-
+    
         let spinInterval = setInterval(animateSpin, 50);
     }
+
      
     function selectWinner() {
-            let segmentAngle = (2 * Math.PI) / attendees.length;
-            let selectedIndex = Math.floor(((angle % (2 * Math.PI)) / segmentAngle) + attendees.length) % attendees.length;
-            let winner = attendees[selectedIndex];
-        
-            // 🔥 Legger til vinnernavn i HTML på mobil og PC
-            let winnerDisplay = document.getElementById("winner-display");
-        
-            if (!winnerDisplay) { // Oppretter elementet hvis det ikke finnes
-                winnerDisplay = document.createElement("div");
-                winnerDisplay.id = "winner-display";
-                winnerDisplay.className = "winner-name";
-                document.querySelector(".wheel-container").appendChild(winnerDisplay);
-            }
-        
-            // 💡 Sørger for at teksten oppdateres riktig hver gang
-            winnerDisplay.textContent = winner + " skal ices!";
-        }
-
-
+        let segmentAngle = (2 * Math.PI) / attendees.length;
     
+        // 🔥 Hold rotationAngle innenfor [0, 2π] for å unngå feilberegning
+        let normalizedAngle = (rotationAngle % (2 * Math.PI));
+    
+        // 🔥 Beregn hvilken sektor pilen peker på
+        let selectedIndex = Math.floor(normalizedAngle / segmentAngle);
+    
+        // 🔥 Velg vinner basert på riktig indeks
+        let winner = attendees[selectedIndex];
+    
+        // 🔥 Oppdater vinnerdisplay i HTML
+        let winnerDisplay = document.getElementById("winner-display");
+    
+        if (!winnerDisplay) { // Opprett elementet hvis det ikke finnes
+            winnerDisplay = document.createElement("div");
+            winnerDisplay.id = "winner-display";
+            winnerDisplay.className = "winner-name";
+            document.querySelector(".wheel-container").appendChild(winnerDisplay);
+        }
+    
+        // 💡 Sørger for at teksten oppdateres riktig hver gang
+        winnerDisplay.textContent = winner + " skal ices!";
+    }
+ 
 
     // 🔥 Koble knappene til funksjonene
     document.getElementById('signupButton').addEventListener('click', signUp);
