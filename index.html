@@ -437,21 +437,29 @@
 
     // 🔥 Last inn eksisterende data når siden åpnes
     onValue(attendeesRef, (snapshot) => {
-        let list = document.getElementById('attendees');
-        list.innerHTML = ""; // ✅ Nullstill listen før vi legger inn data
-        attendees = []; // ✅ Nullstill lykkehjulet
-
+        attendees = []; // ✅ Nullstill attendees[] før vi oppdaterer den
+        let list = document.getElementById("attendees");
+        list.innerHTML = ""; // ✅ Nullstill HTML-listen
+    
         if (!snapshot.exists()) {
             console.log("📌 Ingen påmeldinger funnet.");
+            drawWheel(); // 🔥 Tegn et tomt hjul hvis ingen er påmeldt
             return;
         }
-
+    
         snapshot.forEach(childSnapshot => {
-            addToList(childSnapshot);
+            let name = childSnapshot.val().navn;
+            attendees.push(name); // ✅ Legg navnene i attendees[] DIREKTE!
+    
+            let li = document.createElement("li");
+            li.textContent = name;
+            list.appendChild(li);
         });
-
-        drawWheel(); // 🔥 Tegn hjulet basert på Firebase-data
+    
+        console.log("✅ Oppdaterte attendees:", attendees); // Debugging
+        drawWheel(); // 🔥 Tegn hjulet på nytt med oppdaterte data
     });
+
 
     // 🔥 Lytt til Firebase for oppdateringer i sanntid
     onChildAdded(attendeesRef, addToList);
@@ -478,8 +486,8 @@
 
         if (totalSlices === 0) return;
 
-        let startAngle = 0;
-        let sliceAngle = (2 * Math.PI) / totalSlices;
+        let startAngle = rotationAngle; // Starter på riktig vinkel
+        let sliceAngle = (Math.PI * 2) / totalSlices;
 
         for (let i = 0; i < totalSlices; i++) {
             ctx.beginPath();
@@ -489,13 +497,14 @@
             ctx.fill();
             ctx.stroke();
 
+            // Legger til navnene i hvert segment
             ctx.save();
             ctx.translate(150, 150);
             ctx.rotate(startAngle + sliceAngle / 2);
             ctx.textAlign = "right";
             ctx.fillStyle = "black";
-            ctx.font = "14px Arial";
-            ctx.fillText(attendees[i], 100, 5);
+            ctx.font = "16px Arial";
+            ctx.fillText(attendees[i], 120, 5);
             ctx.restore();
 
             startAngle += sliceAngle;
@@ -503,10 +512,7 @@
     }
 
     function spinWheel() {
-        if (spinning || attendees.length === 0) {
-            alert("Lykkehjulet har ingen deltakere!");
-            return;
-        }
+        if (spinning || attendees.length === 0) return;
         spinning = true;
 
         let spinSpeed = Math.random() * 10 + 20;
@@ -515,9 +521,9 @@
         function animateSpin() {
             spinSpeed *= friction;
             rotationAngle += spinSpeed * (Math.PI / 180);
-            drawWheelAtAngle(rotationAngle);
+            drawWheel();
 
-            if (spinSpeed < 0.3) {
+            if (spinSpeed < 0.5) {
                 clearInterval(spinInterval);
                 spinning = false;
 
@@ -534,42 +540,7 @@
         let spinInterval = setInterval(animateSpin, 50);
     }
 
-    function drawWheelAtAngle(rotationAngle) {
-        let canvas = document.getElementById("wheelCanvas");
-        let ctx = canvas.getContext("2d");
-        let totalSlices = attendees.length;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        if (totalSlices === 0) return;
-
-        ctx.save();
-        ctx.translate(150, 150);
-        ctx.rotate(rotationAngle);
-
-        let startAngle = 0;
-        let sliceAngle = (2 * Math.PI) / totalSlices;
-
-        for (let i = 0; i < totalSlices; i++) {
-            ctx.beginPath();
-            ctx.moveTo(0, 0);
-            ctx.arc(0, 0, 140, startAngle, startAngle + sliceAngle);
-            ctx.fillStyle = `hsl(${i * (360 / totalSlices)}, 100%, 70%)`;
-            ctx.fill();
-            ctx.stroke();
-
-            ctx.save();
-            ctx.rotate(sliceAngle / 2);
-            ctx.textAlign = "right";
-            ctx.fillStyle = "black";
-            ctx.font = "14px Arial";
-            ctx.fillText(attendees[i], 100, 5);
-            ctx.restore();
-
-            startAngle += sliceAngle;
-        }
-
-        ctx.restore();
-    }
 
 </script>
 
