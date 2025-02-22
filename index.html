@@ -438,11 +438,14 @@
     }
 
      
-   function selectWinner() {
+  function selectWinner() {
     let segmentAngle = (2 * Math.PI) / attendees.length;
 
     // 🔥 Juster vinkelen slik at pilen peker på riktig segment
     let adjustedAngle = (rotationAngle + (Math.PI / 2)) % (2 * Math.PI);  
+
+    // 🔥 Flytt vinkelen halvparten av et segment tilbake, fordi pilen peker midt i segmentet
+    adjustedAngle = (adjustedAngle + segmentAngle / 2) % (2 * Math.PI);
 
     // 🔥 Finn riktig indeks basert på justert vinkel
     let selectedIndex = Math.floor(adjustedAngle / segmentAngle);
@@ -466,6 +469,7 @@
     // 💡 Vis vinneren i grensesnittet
     winnerDisplay.textContent = winner + " skal ices! 🧊";
 }
+
 
  
 
