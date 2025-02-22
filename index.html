@@ -438,31 +438,35 @@
     }
 
      
-    function selectWinner() {
-        let segmentAngle = (2 * Math.PI) / attendees.length;
-    
-        // 🔥 Hold rotationAngle innenfor [0, 2π] for å unngå feilberegning
-        let normalizedAngle = (rotationAngle % (2 * Math.PI));
-    
-        // 🔥 Beregn hvilken sektor pilen peker på
-        let selectedIndex = Math.floor(normalizedAngle / segmentAngle);
-    
-        // 🔥 Velg vinner basert på riktig indeks
-        let winner = attendees[selectedIndex];
-    
-        // 🔥 Oppdater vinnerdisplay i HTML
-        let winnerDisplay = document.getElementById("winner-display");
-    
-        if (!winnerDisplay) { // Opprett elementet hvis det ikke finnes
-            winnerDisplay = document.createElement("div");
-            winnerDisplay.id = "winner-display";
-            winnerDisplay.className = "winner-name";
-            document.querySelector(".wheel-container").appendChild(winnerDisplay);
-        }
-    
-        // 💡 Sørger for at teksten oppdateres riktig hver gang
-        winnerDisplay.textContent = winner + " skal ices!";
+   function selectWinner() {
+    let segmentAngle = (2 * Math.PI) / attendees.length;
+
+    // 🔥 Juster vinkelen slik at pilen peker på riktig segment
+    let adjustedAngle = (rotationAngle + (Math.PI / 2)) % (2 * Math.PI);  
+
+    // 🔥 Finn riktig indeks basert på justert vinkel
+    let selectedIndex = Math.floor(adjustedAngle / segmentAngle);
+
+    // 🔥 Sikre at indeksen er innenfor array-grensene
+    if (selectedIndex < 0) {
+        selectedIndex += attendees.length;
     }
+
+    let winner = attendees[selectedIndex];
+
+    // 🔥 Oppdater HTML for vinneren
+    let winnerDisplay = document.getElementById("winner-display");
+    if (!winnerDisplay) {
+        winnerDisplay = document.createElement("div");
+        winnerDisplay.id = "winner-display";
+        winnerDisplay.className = "winner-name";
+        document.querySelector(".wheel-container").appendChild(winnerDisplay);
+    }
+
+    // 💡 Vis vinneren i grensesnittet
+    winnerDisplay.textContent = winner + " skal ices! 🧊";
+}
+
  
 
     // 🔥 Koble knappene til funksjonene
